@@ -179,7 +179,7 @@ router.post("/upload/pic/:id",async(req,res)=>{
          let arr =base64.split(',')
          fs.writeFile('uploads/'+filename,arr[1],'base64',async function(err){
             if(err){
-                 res.status(401).json({message:"err from 182"+err,status:401})
+                 res.status(401).json({message:err,status:401})
             }else{
                 let userData =await data.findOne({_id:_id});
                 let arr = userData.photos; 
