@@ -50,4 +50,5 @@ VigilSchema.methods.generateAuthToken= async function(){
    }
 }
 
+
 module.exports =mongoose.model("VIGIL",VigilSchema);

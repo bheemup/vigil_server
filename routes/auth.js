@@ -3,6 +3,11 @@ const router =express.Router();
 const data = require("../models/Schemas")
 const validator =require("validator");
 const jwt =require("jsonwebtoken");
+const compress =require("compress-base64")
+const fs =require("fs");
+const { base, findOne } = require("../models/Schemas");
+const { request } = require("http");
+const path = require("path");
 
 
 
@@ -28,12 +33,18 @@ router.get("/users",async(req,res)=>{
    res.json({count:data1.length,data:data1})
   
 })
+
+
 // for delete all data from server
 
 router.delete("/users/delete_all",async(req,res)=>{
+   
   await data.deleteMany({})
     res.status(201).json({message:"all data has deleted",status:201})
 })
+
+
+
 //for login user at server
 router.post("/user/login",async(req,res)=>{
     const {email,password}= req.body;
@@ -129,6 +140,32 @@ router.patch("/user/updateProfile/:id",async(req,res)=>{
         if(!req.body.email){
              const _id = req.params.id;
 
+             //for profile photo
+             if(req.body.profilePhoto){
+            let base64= req.body.profilePhoto;
+            let fileExtention =".png";
+            let filename =Date.now().toString()+fileExtention;
+
+
+
+            let arr =base64.split(',')
+            fs.writeFile('uploads/'+filename,arr[1],'base64',async function(err){
+               if(err){
+                    res.status(401).json({message:err,status:401})
+               }else{
+                   
+                   
+                        let updateData = await data.findOneAndUpdate({_id:_id},{profilePhoto:`uploads/${filename}`},{new:true})
+                        res.json({data:updateData,status:201})
+    
+               }
+            })
+
+             }
+
+
+
+
         const updateData= await data.findOneAndUpdate({_id:_id},req.body,{
                 new:true
             })
@@ -148,27 +185,35 @@ router.patch("/user/updateProfile/:id",async(req,res)=>{
     }
    
 })
-// photos update
-router.patch("/user/photos/:id",async(req,res)=>{
-     const _id = req.params.id;
 
-     if(!req.body.img){
-                  return  res.status(401).json({message:"please provide correct img",status:401})
-                 }
-     let userData =await data.findOne({_id:_id});
-                if(!userData){
-                   return res.status(401).json({message:"user is not found" , status:401})
+
+router.post("/upload/pic/:id",async(req,res)=>{
+    const _id =  req.params.id;
+    let base64 =req.body.img;
+    let fileExtention =".png";
+    let filename =Date.now().toString()+fileExtention;
+    if(base64){
+         let arr =base64.split(',')
+         fs.writeFile('uploads/'+filename,arr[1],'base64',async function(err){
+            if(err){
+                 res.status(401).json({message:err,status:401})
+            }else{
+                let userData =await data.findOne({_id:_id});
+                let arr = userData.photos; 
+                if(arr.length > 9){
+                    arr.pop()
                 }
-                  
-                 
-                let arr = userData.photos;
-                arr = [req.body.img,...arr];
-               let updateData = await data.findOneAndUpdate({_id:_id},{photos:arr},{new:true})
-               res.json({data:updateData,status:201})
+                                   arr = [`uploads/${filename}`,...arr];
+                               let updateData = await data.findOneAndUpdate({_id:_id},{photos:arr},{new:true})
+                               res.json({data:updateData,status:201})
+          
 
-
+            }
+         })
+    }else{
+        res.status(401).json({message:"please provide correct info",status:401})
+    }
 })
-
 // for location update
 router.patch("/user/location/:id",async (req,res)=>{
      //for longitude updation
@@ -206,6 +251,7 @@ router.patch("/user/location/:id",async (req,res)=>{
         return res.status(401).json({message:"please provide correct info",status:401})
      }
 })
+
 
 
 module.exports=router;
