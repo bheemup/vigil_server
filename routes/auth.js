@@ -97,7 +97,6 @@ router.post("/user/register",async(req,res)=>{
 router.post("/upload/profilePhoto/:id",async(req,res)=>{
     const _id = req.params.id;
     let user_data =await data.findOne({_id:_id})
-    res.send({data:user_data})
 
    if(req.body.profilePhoto){
     if(!user_data){
